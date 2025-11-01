@@ -381,27 +381,13 @@ send_to_telegram() {
     local message="$2"
     local response
     
-    # Create inline keyboard with dynamic button
-    local keyboard=$(cat << EOF
-{
-    "inline_keyboard": [[
-        {
-            "text": "$CHANNEL_NAME",
-            "url": "$CHANNEL_URL"
-        }
-    ]]
-}
-EOF
-)
-    
     response=$(curl -s -w "%{http_code}" -X POST \
         -H "Content-Type: application/json" \
         -d "{
             \"chat_id\": \"${chat_id}\",
             \"text\": \"$message\",
             \"parse_mode\": \"MARKDOWN\",
-            \"disable_web_page_preview\": true,
-            \"reply_markup\": $keyboard
+            \"disable_web_page_preview\": true
         }" \
         https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage)
     
@@ -512,9 +498,8 @@ main() {
     cleanup
     
     log "Cloning repository..."
-    # 💥 GitHub Acc ကို cxanminthar ဖြင့် ပြန်အစားထိုးထားသည်
-    # မှတ်ချက်: Deployment လုပ်စဉ်တွင် ဒီ repo ကနေ clone လုပ်ပါမည်။
-    if ! git clone https://github.com/cxanminthar/gcp-v2ray.git; then
+    # 💥 GitHub Acc ကို KaungSattKyaw ဖြင့် အစားထိုးထားသည်
+    if ! git clone https://github.com/KaungSattKyaw/gcp-v2ray.git; then
         error "Failed to clone repository"
         exit 1
     fi
@@ -549,8 +534,8 @@ main() {
     DOMAIN=$(echo $SERVICE_URL | sed 's|https://||')
     
     # Create Vless share link
-    # 💥 VLESS Link Path ကို မူရင်းအတိုင်း path=%2Ftgkmks26381Mr ဖြင့် ပြန်လည်အစားထိုးထားသည်
-    VLESS_LINK="vless://${UUID}@${HOST_DOMAIN}:443?path=%2Ftgkmks26381Mr&security=tls&alpn=none&encryption=none&host=${DOMAIN}&type=ws&sni=${DOMAIN}#${SERVICE_NAME}"
+    # 💥 VLESS Link Path ကို path=%2Ftg-%40ksk1011 ဖြင့် ပြန်လည်အစားထိုးထားသည်
+    VLESS_LINK="vless://${UUID}@${HOST_DOMAIN}:443?path=%2Ftg-%40ksk1011&security=tls&alpn=none&encryption=none&host=${DOMAIN}&type=ws&sni=${DOMAIN}#${SERVICE_NAME}"
     
     # Create beautiful telegram message with emojis
     MESSAGE="🚀 *GCP V2Ray Deployment Successful* ✅
