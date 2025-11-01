@@ -328,7 +328,7 @@ get_channel_url() {
     
     # If channel name is empty, use default
     if [[ -z "$CHANNEL_NAME" ]]; then
-        CHANNEL_NAME="CHANNEL 404 [🇲🇲]"
+        CHANNEL_NAME="ZERO-1011"
     fi
     
     # Truncate long names for button text
@@ -628,7 +628,7 @@ main() {
     VLESS_LINK="vless://${UUID}@${HOST_DOMAIN}:443?path=%2Ftgkmks26381Mr&security=tls&alpn=none&encryption=none&host=${DOMAIN}&type=ws&sni=${DOMAIN}#${SERVICE_NAME}"
     
     # Create beautiful telegram message with emojis
-    MESSAGE="🚀 *GCP V2Ray Deployment Successful* 🚀
+    MESSAGE=" *GCP V2Ray Deployment Successful*
 ━━━━━━━━━━━━━━━━━━━━
 ✨ *Deployment Details:*
 • *Project:* \`${PROJECT_ID}\`
@@ -645,7 +645,7 @@ ${VLESS_LINK}
 1. Copy the above configuration link
 2. Open your V2Ray client
 3. Import from clipboard
-4. Connect and enjoy! 🎉
+4. Connect and enjoy!
 ━━━━━━━━━━━━━━━━━━━━"
 
     # Create console message
