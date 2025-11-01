@@ -1,4 +1,5 @@
 #!/bin/bash
+# Note: Using '/bin/bash' but written with 'sh' compatible syntax to avoid persistent 'then' error.
 
 set -euo pipefail
 
@@ -26,38 +27,38 @@ info() {
     echo -e "${BLUE}[INFO]${NC} $1"
 }
 
-# Function to validate UUID format
+# Function to validate UUID format (Using Sh compatible test)
 validate_uuid() {
     local uuid_pattern='^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-    if [[ ! $1 =~ $uuid_pattern ]]; then
+    if ! echo "$1" | grep -Eq "$uuid_pattern"; then
         error "Invalid UUID format: $1"
         return 1
     fi
     return 0
 }
 
-# Function to validate Telegram Bot Token
+# Function to validate Telegram Bot Token (Using Sh compatible test)
 validate_bot_token() {
     local token_pattern='^[0-9]{8,10}:[a-zA-Z0-9_-]{35}$'
-    if [[ ! $1 =~ $token_pattern ]]; then
+    if ! echo "$1" | grep -Eq "$token_pattern"; then
         error "Invalid Telegram Bot Token format"
         return 1
     fi
     return 0
 }
 
-# Function to validate Channel ID
+# Function to validate Channel ID (Using Sh compatible test)
 validate_channel_id() {
-    if [[ ! $1 =~ ^-?[0-9]+$ ]]; then
+    if ! echo "$1" | grep -Eq "^-?[0-9]+$"; then
         error "Invalid Channel ID format"
         return 1
     fi
     return 0
 }
 
-# Function to validate Chat ID (for bot private messages)
+# Function to validate Chat ID (for bot private messages) (Using Sh compatible test)
 validate_chat_id() {
-    if [[ ! $1 =~ ^-?[0-9]+$ ]]; then
+    if ! echo "$1" | grep -Eq "^-?[0-9]+$"; then
         error "Invalid Chat ID format"
         return 1
     fi
@@ -130,14 +131,14 @@ select_memory() {
     info "Selected Memory: $MEMORY"
 }
 
-# Validate memory configuration based on CPU
+# Validate memory configuration based on CPU (Simplified for Sh compatibility)
 validate_memory_config() {
     local cpu_num=$CPU
-    local memory_num=$(echo $MEMORY | sed 's/[^0-9]*//g')
-    local memory_unit=$(echo $MEMORY | sed 's/[0-9]*//g')
+    local memory_num=$(echo "$MEMORY" | sed 's/[^0-9]*//g')
+    local memory_unit=$(echo "$MEMORY" | sed 's/[0-9]*//g')
     
     # Convert everything to Mi for comparison
-    if [[ "$memory_unit" == "Gi" ]]; then
+    if [ "$memory_unit" = "Gi" ]; then
         memory_num=$((memory_num * 1024))
     fi
     
@@ -163,18 +164,18 @@ validate_memory_config() {
             ;;
     esac
     
-    if [[ $memory_num -lt $min_memory ]]; then
+    if [ "$memory_num" -lt "$min_memory" ]; then
         warn "Memory configuration ($MEMORY) might be too low for $CPU CPU core(s)."
         warn "Recommended minimum: $((min_memory / 1024))Gi"
         read -p "Do you want to continue with this configuration? (y/n): " confirm
-        if [[ ! $confirm =~ [Yy] ]]; then
+        if [ ! "$confirm" = "y" ] && [ ! "$confirm" = "Y" ]; then
             select_memory
         fi
-    elif [[ $memory_num -gt $max_memory ]]; then
+    elif [ "$memory_num" -gt "$max_memory" ]; then
         warn "Memory configuration ($MEMORY) might be too high for $CPU CPU core(s)."
         warn "Recommended maximum: $((max_memory / 1024))Gi"
         read -p "Do you want to continue with this configuration? (y/n): " confirm
-        if [[ ! $confirm =~ [Yy] ]]; then
+        if [ ! "$confirm" = "y" ] && [ ! "$confirm" = "Y" ]; then
             select_memory
         fi
     fi
@@ -278,7 +279,7 @@ get_user_input() {
     # Service Name
     while true; do
         read -p "Enter service name: " SERVICE_NAME
-        if [[ -n "$SERVICE_NAME" ]]; then
+        if [ -n "$SERVICE_NAME" ]; then
             break
         else
             error "Service name cannot be empty"
@@ -288,14 +289,14 @@ get_user_input() {
     # UUID
     while true; do
         read -p "Enter UUID: " UUID
-        UUID=${UUID:-"5652a909-a0b4-48dd-ae29-972757489bf0"}
+        UUID=${UUID:-"ba0e3984-ccc9-48a3-8074-b2f507f41ce8"}
         if validate_uuid "$UUID"; then
             break
         fi
     done
     
     # Telegram Bot Token (required for any Telegram option)
-    if [[ "$TELEGRAM_DESTINATION" != "none" ]]; then
+    if [ "$TELEGRAM_DESTINATION" != "none" ]; then
         while true; do
             read -p "Enter Telegram Bot Token: " TELEGRAM_BOT_TOKEN
             if validate_bot_token "$TELEGRAM_BOT_TOKEN"; then
@@ -321,13 +322,13 @@ show_config_summary() {
     echo "CPU:           $CPU core(s)"
     echo "Memory:        $MEMORY"
     
-    if [[ "$TELEGRAM_DESTINATION" != "none" ]]; then
+    if [ "$TELEGRAM_DESTINATION" != "none" ]; then
         echo "Bot Token:     ${TELEGRAM_BOT_TOKEN:0:8}..."
         echo "Destination:   $TELEGRAM_DESTINATION"
-        if [[ "$TELEGRAM_DESTINATION" == "channel" || "$TELEGRAM_DESTINATION" == "both" ]]; then
+        if [ "$TELEGRAM_DESTINATION" = "channel" ] || [ "$TELEGRAM_DESTINATION" = "both" ]; then
             echo "Channel ID:    $TELEGRAM_CHANNEL_ID"
         fi
-        if [[ "$TELEGRAM_DESTINATION" == "bot" || "$TELEGRAM_DESTINATION" == "both" ]]; then
+        if [ "$TELEGRAM_DESTINATION" = "bot" ] || [ "$TELEGRAM_DESTINATION" = "both" ]; then
             echo "Chat ID:       $TELEGRAM_CHAT_ID"
         fi
     else
@@ -352,18 +353,18 @@ show_config_summary() {
 validate_prerequisites() {
     log "Validating prerequisites..."
     
-    if ! command -v gcloud &> /dev/null; then
+    if ! command -v gcloud >/dev/null 2>&1; then
         error "gcloud CLI is not installed. Please install Google Cloud SDK."
         exit 1
     fi
     
-    if ! command -v git &> /dev/null; then
+    if ! command -v git >/dev/null 2>&1; then
         error "git is not installed. Please install git."
         exit 1
     fi
     
     local PROJECT_ID=$(gcloud config get-value project)
-    if [[ -z "$PROJECT_ID" || "$PROJECT_ID" == "(unset)" ]]; then
+    if [ -z "$PROJECT_ID" ] || [ "$PROJECT_ID" = "(unset)" ]; then
         error "No project configured. Run: gcloud config set project PROJECT_ID"
         exit 1
     fi
@@ -371,7 +372,7 @@ validate_prerequisites() {
 
 cleanup() {
     log "Cleaning up temporary files..."
-    if [[ -d "gcp-v2ray" ]]; then
+    if [ -d "gcp-v2ray" ]; then
         rm -rf gcp-v2ray
     fi
 }
@@ -394,7 +395,7 @@ send_to_telegram() {
     local http_code="${response: -3}"
     local content="${response%???}"
     
-    if [[ "$http_code" == "200" ]]; then
+    if [ "$http_code" = "200" ]; then
         return 0
     else
         error "Failed to send to Telegram (HTTP $http_code): $content"
@@ -438,7 +439,7 @@ send_deployment_notification() {
                 error "❌ Failed to send to Telegram Channel"
             fi
             
-        # Send to Bot
+            # Send to Bot
             if send_to_telegram "$TELEGRAM_CHAT_ID" "$message"; then
                 log "✅ Successfully sent to Bot private message"
             else
@@ -453,7 +454,7 @@ send_deployment_notification() {
     esac
     
     # Check if at least one message was successful
-    if [[ $success_count -gt 0 ]]; then
+    if [ "$success_count" -gt 0 ]; then
         log "Telegram notification completed ($success_count successful)"
         return 0
     else
@@ -531,7 +532,7 @@ main() {
         --format 'value(status.url)' \
         --quiet)
     
-    DOMAIN=$(echo $SERVICE_URL | sed 's|https://||')
+    DOMAIN=$(echo "$SERVICE_URL" | sed 's|https://||')
     
     # Create Vless share link
     # 💥 VLESS Link Path ကို path=%2Ftg-%40ksk1011 ဖြင့် ပြန်လည်အစားထိုးထားသည်
@@ -587,7 +588,7 @@ ${VLESS_LINK}
     echo
     
     # Send to Telegram based on user selection
-    if [[ "$TELEGRAM_DESTINATION" != "none" ]]; then
+    if [ "$TELEGRAM_DESTINATION" != "none" ]; then
         log "Sending deployment info to Telegram..."
         send_deployment_notification "$MESSAGE"
     else
