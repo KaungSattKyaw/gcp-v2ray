@@ -296,7 +296,7 @@ select_telegram_destination() {
 get_channel_url() {
     echo
     info "=== Channel URL Configuration ==="
-    echo "Default URL: https://t.me/premium_channel_404"
+    echo "Default URL: https://t.me/zero_1101_tg"
     echo "You can use the default URL or enter your own custom URL."
     echo "Examples:"
     echo "  - https://t.me/your_channel"
