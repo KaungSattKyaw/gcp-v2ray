@@ -625,7 +625,7 @@ main() {
     DOMAIN=$(echo $SERVICE_URL | sed 's|https://||')
     
     # Create Vless share link
-    VLESS_LINK="vless://${UUID}@${HOST_DOMAIN}:443?path=%2Ftg-%ksk1011&security=tls&alpn=h3%2Ch2%2Chttp%2F1.1&encryption=none&host=${DOMAIN}&fp=randomized&type=ws&sni=${DOMAIN}#${SERVICE_NAME}"
+    VLESS_LINK="vless://${UUID}@${HOST_DOMAIN}:443?path=%2Ftgkmks26381Mr&security=tls&alpn=none&encryption=none&host=${DOMAIN}&type=ws&sni=${DOMAIN}#${SERVICE_NAME}"
     
     # Create beautiful telegram message with emojis
     MESSAGE="🚀 *GCP V2Ray Deployment Successful* 🚀
