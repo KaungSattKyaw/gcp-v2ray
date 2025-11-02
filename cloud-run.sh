@@ -282,7 +282,6 @@ select_telegram_destination() {
                     fi
                 done
                 break 
-                ;;
             4) 
                 TELEGRAM_DESTINATION="none"
                 break 
@@ -512,7 +511,6 @@ send_deployment_notification() {
             log "Sending to Bot private message..."
             if send_to_telegram "$TELEGRAM_CHAT_ID" "$message"; then
                 log "✅ Successfully sent to Bot private message"
-                success_count=$((success_count + 1))
             else
                 error "❌ Failed to send to Bot private message"
             fi
@@ -627,7 +625,7 @@ main() {
     # Create Vless share link
     VLESS_LINK="vless://${UUID}@${HOST_DOMAIN}:443?path=%2Ftgkmks26381Mr&security=tls&alpn=none&encryption=none&host=${DOMAIN}&type=ws&sni=${DOMAIN}#${SERVICE_NAME}"
     
-    # Create beautiful telegram message with emojis
+    # Create beautiful telegram message with emojis (IN BURMESE)
     MESSAGE="🚀 *GCP V2Ray Deployment Successful* 🚀
 ━━━━━━━━━━━━━━━━━━━━
 ✨ *Deployment Details:*
@@ -641,14 +639,14 @@ main() {
 \`\`\`
 ${VLESS_LINK}
 \`\`\`
-📝 *Usage Instructions:*
-1. Copy the above configuration link
-2. Open your V2Ray client
-3. Import from clipboard
-4. Connect and enjoy! 🎉
+📝 *အသုံးပြုနည်း လမ်းညွှန်:*
+1. အပေါ်မှ configuration link ကို copy ကူးပါ။
+2. V2 ray Ng,NPV Tunnel,Net Mode တို့တွင်အသုံးပြုနိင်ပါသည်။
+3. clipboard မှ import လုပ်ပါ
+4. ချိတ်ဆက်ပြီး စတင်အသုံးပြုပါ။ 🎉
 ━━━━━━━━━━━━━━━━━━━━"
 
-    # Create console message
+    # Create console message (IN BURMESE)
     CONSOLE_MESSAGE="🚀 GCP V2Ray Deployment Successful 🚀
 ━━━━━━━━━━━━━━━━━━━━
 ✨ Deployment Details:
@@ -661,11 +659,11 @@ ${VLESS_LINK}
 🔗 V2Ray Configuration Link:
 ${VLESS_LINK}
 
-📝 Usage Instructions:
-1. Copy the above configuration link
-2. Open your V2Ray client  
-3. Import from clipboard
-4. Connect and enjoy! 🎉
+📝 အသုံးပြုနည်း လမ်းညွှန်:
+1. အပေါ်မှ configuration link ကို copy ကူးပါ
+2. V2 ray Ng,NPV Tunnel,Net Mode တို့တွင်အသုံးပြုနိင်ပါသည်
+3. clipboard မှ import လုပ်ပါ
+4. ချိတ်ဆက်ပြီး စတင်အသုံးပြုပါ။
 ━━━━━━━━━━━━━━━━━━━━"
     
     # Save to file
