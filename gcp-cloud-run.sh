@@ -63,19 +63,10 @@ calculate_expiry_time() {
     local expiry_utc_epoch=$((current_utc_epoch + duration_seconds))
     
     # Convert expiry UTC epoch time to MST (UTC+6:30 = 390 minutes * 60 seconds = 23400 seconds offset)
-    # The GNU date utility handles timezones directly, but to ensure portability in Cloud Shell
-    # and use the specific 6:30 offset, we calculate the expiry time manually and apply the MST offset.
-    
     local mst_offset_seconds=23400 # 6 hours 30 minutes
     local expiry_mst_epoch=$((expiry_utc_epoch + mst_offset_seconds))
     
     # Format the expiry MST time to a human-readable format (e.g., 05:30 AM)
-    # Note: Cloud Shell's 'date' command often defaults to UTC, so we format the manually calculated epoch.
-    
-    # We use a trick: date -d @<epoch_time> to format the epoch time
-    # However, since Cloud Shell sometimes restricts date options, we simplify to display time.
-    
-    # Final format: 05:30 AM (MST)
     local expiry_mst_time=$(date -d "@$expiry_mst_epoch" +'%I:%M %p' 2>/dev/null || date -r "$expiry_mst_epoch" +'%I:%M %p')
     
     # Check if time calculation failed (e.g., unsupported 'date' options)
@@ -778,10 +769,12 @@ main() {
     # Create Vless share link
     VLESS_LINK="vless://${UUID}@${HOST_DOMAIN}:443?path=%2Ftgkmks26381Mr&security=tls&alpn=none&encryption=none&host=${DOMAIN}&type=ws&sni=${DOMAIN}#${SERVICE_NAME}"
     
-    # Create beautiful telegram message with emojis (IN BURMESE)
-    MESSAGE="🚀 *GCP V2Ray Deployment Successful* 🚀
-⏳ *ကြာချိန်:* $DEFAULT_DEPLOY_DURATION
-⏱️ *ကုန်ဆုံးမည့်အချိန်:* $expiry_time
+    # Create beautiful telegram message with emojis (IN BURMESE) - Aesthetic Version
+    MESSAGE="
+🚀 *GCP V2Ray Deployment Successful* 🚀
+━━━━━━━━━━━━━━━━━━━━
+⏳ *ကြာချိန်:* \`${DEFAULT_DEPLOY_DURATION}\`
+⏱️ *ကုန်ဆုံးမည့်အချိန်:* \`${expiry_time}\`
 ━━━━━━━━━━━━━━━━━━━━
 ✨ *Deployment Details:*
 • *Project:* \`${PROJECT_ID}\`
@@ -791,20 +784,20 @@ main() {
 • *Domain:* \`${DOMAIN}\`
 
 🔗 *V2Ray Configuration Link:*
-\`\`\`
-${VLESS_LINK}
-\`\`\`
+\`${VLESS_LINK}\`
+
 📝 *အသုံးပြုနည်း လမ်းညွှန်:*
-1. အပေါ်မှ configuration link ကို copy ကူးပါ။
-2. V2Ray client ကို ဖွင့်ပါ။
-3. clipboard မှ import လုပ်ပါ။
-4. ချိတ်ဆက်ပြီး စတင်အသုံးပြုပါ။ 🎉
+1. 🔗 configuration link ကို copy ကူးပါ။
+2. 📱 V2Ray client ကို ဖွင့်ပါ။
+3. 📥 clipboard မှ import လုပ်ပါ။
+4. ✅ ချိတ်ဆက်ပြီး စတင်အသုံးပြုပါ။ 🎉
 ━━━━━━━━━━━━━━━━━━━━"
 
     # Create console message (IN BURMESE)
-    CONSOLE_MESSAGE="🚀 GCP V2Ray Deployment Successful 🚀
-⏳ ကြာချိန်: $DEFAULT_DEPLOY_DURATION
-⏱️ ကုန်ဆုံးမည့်အချိန်: $expiry_time
+    CONSOLE_MESSAGE="
+🚀 GCP V2Ray Deployment Successful 🚀
+⏳ ကြာချိန်: ${DEFAULT_DEPLOY_DURATION}
+⏱️ ကုန်ဆုံးမည့်အချိန်: ${expiry_time}
 ━━━━━━━━━━━━━━━━━━━━
 ✨ Deployment Details:
 • Project: ${PROJECT_ID}
@@ -817,10 +810,10 @@ ${VLESS_LINK}
 ${VLESS_LINK}
 
 📝 အသုံးပြုနည်း လမ်းညွှန်:
-1. အပေါ်မှ configuration link ကို copy ကူးပါ။
-2. V2Ray client ကို ဖွင့်ပါ။
-3. clipboard မှ import လုပ်ပါ။
-4. ချိတ်ဆက်ပြီး စတင်အသုံးပြုပါ။ 🎉
+1. 🔗 configuration link ကို copy ကူးပါ။
+2. 📱 V2Ray client ကို ဖွင့်ပါ။
+3. 📥 clipboard မှ import လုပ်ပါ။
+4. ✅ ချိတ်ဆက်ပြီး စတင်အသုံးပြုပါ။ 🎉
 ━━━━━━━━━━━━━━━━━━━━"
     
     # Save to file
