@@ -13,6 +13,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
+# --- Configuration Constants ---
+DEFAULT_DEPLOY_DURATION="5h" # အလိုအလျောက်သတ်မှတ်ထားသော ကြာချိန်: ၅ နာရီ
+
 log() {
     echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1"
 }
@@ -27,6 +30,60 @@ error() {
 
 info() {
     echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+# --- Time Calculation Functions ---
+
+# Function to convert duration string (e.g., 5h30m) to seconds
+parse_duration_to_seconds() {
+    local duration="$1"
+    local total_seconds=0
+    
+    # Extract hours
+    if [[ "$duration" =~ ([0-9]+)h ]]; then
+        total_seconds=$((total_seconds + ${BASH_REMATCH[1]} * 3600))
+    fi
+    
+    # Extract minutes
+    if [[ "$duration" =~ ([0-9]+)m ]]; then
+        total_seconds=$((total_seconds + ${BASH_REMATCH[1]} * 60))
+    fi
+    
+    echo "$total_seconds"
+}
+
+# Calculates expiry time in Myanmar Standard Time (MST = UTC+6:30)
+calculate_expiry_time() {
+    local duration_seconds="$1"
+    
+    # Get current UTC time in seconds since epoch
+    local current_utc_epoch=$(date +%s)
+    
+    # Calculate expiry time in UTC epoch
+    local expiry_utc_epoch=$((current_utc_epoch + duration_seconds))
+    
+    # Convert expiry UTC epoch time to MST (UTC+6:30 = 390 minutes * 60 seconds = 23400 seconds offset)
+    # The GNU date utility handles timezones directly, but to ensure portability in Cloud Shell
+    # and use the specific 6:30 offset, we calculate the expiry time manually and apply the MST offset.
+    
+    local mst_offset_seconds=23400 # 6 hours 30 minutes
+    local expiry_mst_epoch=$((expiry_utc_epoch + mst_offset_seconds))
+    
+    # Format the expiry MST time to a human-readable format (e.g., 05:30 AM)
+    # Note: Cloud Shell's 'date' command often defaults to UTC, so we format the manually calculated epoch.
+    
+    # We use a trick: date -d @<epoch_time> to format the epoch time
+    # However, since Cloud Shell sometimes restricts date options, we simplify to display time.
+    
+    # Final format: 05:30 AM (MST)
+    local expiry_mst_time=$(date -d "@$expiry_mst_epoch" +'%I:%M %p' 2>/dev/null || date -r "$expiry_mst_epoch" +'%I:%M %p')
+    
+    # Check if time calculation failed (e.g., unsupported 'date' options)
+    if [[ -z "$expiry_mst_time" ]]; then
+        echo "Time calculation failed. Displaying default duration."
+    else
+        echo "$expiry_mst_time (MST)"
+    fi
 }
 
 # --- Validation Functions ---
@@ -429,6 +486,11 @@ get_user_input() {
 
 # Display configuration summary
 show_config_summary() {
+    
+    # Calculate expiry time based on the fixed default duration
+    local duration_seconds=$(parse_duration_to_seconds "$DEFAULT_DEPLOY_DURATION")
+    local expiry_time=$(calculate_expiry_time "$duration_seconds")
+    
     echo
     info "=== Configuration Summary ==="
     echo "Project ID:    $(gcloud config get-value project)"
@@ -438,6 +500,8 @@ show_config_summary() {
     echo "UUID:          $UUID"
     echo "CPU:           $CPU core(s)"
     echo "Memory:        $MEMORY"
+    echo "Duration:      $DEFAULT_DEPLOY_DURATION"
+    echo "Expires At:    $expiry_time"
     
     if [[ "$TELEGRAM_DESTINATION" != "none" ]]; then
         echo "Bot Token:     ${TELEGRAM_BOT_TOKEN:0:8}..."
@@ -643,6 +707,12 @@ main() {
     select_memory
     select_telegram_destination
     get_user_input
+    
+    # Calculate expiry time based on the fixed default duration
+    local duration_seconds=$(parse_duration_to_seconds "$DEFAULT_DEPLOY_DURATION")
+    local expiry_time=$(calculate_expiry_time "$duration_seconds")
+    
+    # Display summary before deployment
     show_config_summary
     
     PROJECT_ID=$(gcloud config get-value project)
@@ -710,6 +780,8 @@ main() {
     
     # Create beautiful telegram message with emojis (IN BURMESE)
     MESSAGE="🚀 *GCP V2Ray Deployment Successful* 🚀
+⏳ *ကြာချိန်:* $DEFAULT_DEPLOY_DURATION
+⏱️ *ကုန်ဆုံးမည့်အချိန်:* $expiry_time
 ━━━━━━━━━━━━━━━━━━━━
 ✨ *Deployment Details:*
 • *Project:* \`${PROJECT_ID}\`
@@ -731,6 +803,8 @@ ${VLESS_LINK}
 
     # Create console message (IN BURMESE)
     CONSOLE_MESSAGE="🚀 GCP V2Ray Deployment Successful 🚀
+⏳ ကြာချိန်: $DEFAULT_DEPLOY_DURATION
+⏱️ ကုန်ဆုံးမည့်အချိန်: $expiry_time
 ━━━━━━━━━━━━━━━━━━━━
 ✨ Deployment Details:
 • Project: ${PROJECT_ID}
