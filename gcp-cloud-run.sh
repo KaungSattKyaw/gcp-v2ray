@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# This script deploys a V2Ray service to Google Cloud Run,
+# handles user input for configuration, and sends deployment details
+# to multiple Telegram channels/chats if configured.
+
 set -euo pipefail
 
 # Colors for output
@@ -25,6 +29,8 @@ info() {
     echo -e "${BLUE}[INFO]${NC} $1"
 }
 
+# --- Validation Functions ---
+
 # Function to validate UUID format
 validate_uuid() {
     local uuid_pattern='^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
@@ -45,7 +51,7 @@ validate_bot_token() {
     return 0
 }
 
-# Function to validate Channel ID (Now supports multiple IDs separated by commas)
+# Function to validate Channel ID (Supports multiple IDs separated by commas)
 validate_channel_id() {
     local ids_string="$1"
     # Split by comma and iterate
@@ -59,13 +65,14 @@ validate_channel_id() {
         fi
         if [[ ! "$trimmed_id" =~ ^-?[0-9]+$ ]]; then
             error "Invalid Channel ID format detected: $trimmed_id"
+            error "Channel IDs must start with -100... or be positive numbers."
             return 1
         fi
     done
     return 0
 }
 
-# Function to validate Chat ID (Now supports multiple IDs separated by commas)
+# Function to validate Chat ID (Supports multiple IDs separated by commas)
 validate_chat_id() {
     local ids_string="$1"
     # Split by comma and iterate
@@ -107,6 +114,9 @@ validate_url() {
         return 1
     fi
 }
+
+
+# --- Configuration Functions ---
 
 # CPU selection function
 select_cpu() {
@@ -224,32 +234,42 @@ validate_memory_config() {
     fi
 }
 
-# Region selection function
+# Region selection function (Expanded to 13 regions)
 select_region() {
     echo
-    info "=== Region Selection ==="
-    echo "1. us-central1 (Iowa, USA)"
+    info "=== Region Selection (13 Regions) ==="
+    echo "1. us-central1 (Iowa, USA) - Default"
     echo "2. us-west1 (Oregon, USA)" 
     echo "3. us-east1 (South Carolina, USA)"
-    echo "4. europe-west1 (Belgium)"
-    echo "5. asia-southeast1 (Singapore)"
-    echo "6. asia-southeast2 (Indonesia)"
-    echo "7. asia-northeast1 (Tokyo, Japan)"
-    echo "8. asia-east1 (Taiwan)"
+    echo "4. southamerica-east1 (São Paulo, Brazil)"
+    echo "5. europe-west1 (Belgium)"
+    echo "6. europe-west4 (Netherlands)"
+    echo "7. asia-southeast1 (Singapore)"
+    echo "8. asia-southeast2 (Jakarta, Indonesia)"
+    echo "9. asia-northeast1 (Tokyo, Japan)"
+    echo "10. asia-east1 (Taiwan)"
+    echo "11. australia-southeast1 (Sydney, Australia)"
+    echo "12. me-west1 (Tel Aviv, Israel)"
+    echo "13. africa-south1 (Johannesburg, South Africa)"
     echo
     
     while true; do
-        read -p "Select region (1-8): " region_choice
+        read -p "Select region (1-13): " region_choice
         case $region_choice in
             1) REGION="us-central1"; break ;;
             2) REGION="us-west1"; break ;;
             3) REGION="us-east1"; break ;;
-            4) REGION="europe-west1"; break ;;
-            5) REGION="asia-southeast1"; break ;;
-            6) REGION="asia-southeast2"; break ;;
-            7) REGION="asia-northeast1"; break ;;
-            8) REGION="asia-east1"; break ;;
-            *) echo "Invalid selection. Please enter a number between 1-8." ;;
+            4) REGION="southamerica-east1"; break ;;
+            5) REGION="europe-west1"; break ;;
+            6) REGION="europe-west4"; break ;;
+            7) REGION="asia-southeast1"; break ;;
+            8) REGION="asia-southeast2"; break ;;
+            9) REGION="asia-northeast1"; break ;;
+            10) REGION="asia-east1"; break ;;
+            11) REGION="australia-southeast1"; break ;;
+            12) REGION="me-west1"; break ;;
+            13) REGION="africa-south1"; break ;;
+            *) echo "Invalid selection. Please enter a number between 1-13." ;;
         esac
     done
     
@@ -259,12 +279,16 @@ select_region() {
 # Telegram destination selection
 select_telegram_destination() {
     echo
-    info "=== Telegram Destination ==="
-    echo "1. Send to Channel only"
-    echo "2. Send to Bot private message only" 
-    echo "3. Send to both Channel and Bot"
-    echo "4. Don't send to Telegram"
+    info "=== Telegram Notification Destination ==="
+    echo "1. Channel သို့သာ ပို့မည် (Multi-Channel Support)"
+    echo "2. Bot Private Message သို့သာ ပို့မည်" 
+    echo "3. Channel နှင့် Bot နှစ်ခုလုံးသို့ ပို့မည်"
+    echo "4. Telegram ကို မပို့ပဲ Deploy လုပ်မည်"
     echo
+    
+    # Initialize these variables before the loop to prevent "unbound variable" error
+    TELEGRAM_CHANNEL_ID=""
+    TELEGRAM_CHAT_ID=""
     
     while true; do
         read -p "Select destination (1-4): " telegram_choice
@@ -272,7 +296,7 @@ select_telegram_destination() {
             1) 
                 TELEGRAM_DESTINATION="channel"
                 while true; do
-                    read -p "Enter Telegram Channel ID(s) (comma-separated if multiple): " TELEGRAM_CHANNEL_ID
+                    read -p "Enter Telegram Channel ID(s) (comma-separated if multiple, eg: -100...,-100...): " TELEGRAM_CHANNEL_ID
                     if validate_channel_id "$TELEGRAM_CHANNEL_ID"; then
                         break
                     fi
@@ -292,7 +316,7 @@ select_telegram_destination() {
             3) 
                 TELEGRAM_DESTINATION="both"
                 while true; do
-                    read -p "Enter Telegram Channel ID(s) (comma-separated if multiple): " TELEGRAM_CHANNEL_ID
+                    read -p "Enter Telegram Channel ID(s) (comma-separated if multiple, eg: -100...,-100...): " TELEGRAM_CHANNEL_ID
                     if validate_channel_id "$TELEGRAM_CHANNEL_ID"; then
                         break
                     fi
@@ -319,13 +343,9 @@ select_telegram_destination() {
 # Channel URL input function
 get_channel_url() {
     echo
-    info "=== Channel URL Configuration ==="
+    info "=== Channel URL Configuration (For Telegram Button) ==="
     echo "Default URL: https://t.me/zero_1101_tg"
     echo "You can use the default URL or enter your own custom URL."
-    echo "Examples:"
-    echo "  - https://t.me/your_channel"
-    echo "  - https://t.me/username"
-    echo "  - https://example.com"
     echo
     
     while true; do
@@ -350,7 +370,7 @@ get_channel_url() {
         CHANNEL_NAME=$(echo "$CHANNEL_URL" | sed 's|.*://||' | sed 's|/.*||' | sed 's|www\.||')
     fi
     
-    # If channel name is empty, use default
+    # If channel name is empty, use default (Burmese name)
     if [[ -z "$CHANNEL_NAME" ]]; then
         CHANNEL_NAME="1101 Channel"
     fi
@@ -388,7 +408,7 @@ get_user_input() {
         fi
     done
     
-    # Telegram Bot Token (required for any Telegram option)
+    # Telegram Bot Token (required if any Telegram option is selected)
     if [[ "$TELEGRAM_DESTINATION" != "none" ]]; then
         while true; do
             read -p "Enter Telegram Bot Token: " TELEGRAM_BOT_TOKEN
@@ -396,16 +416,15 @@ get_user_input() {
                 break
             fi
         done
+        
+        # Get Channel URL if Telegram is enabled
+        get_channel_url
     fi
-    
+
     # Host Domain (optional)
     read -p "Enter host domain [default: m.googleapis.com]: " HOST_DOMAIN
     HOST_DOMAIN=${HOST_DOMAIN:-"m.googleapis.com"}
     
-    # Get Channel URL if Telegram is enabled
-    if [[ "$TELEGRAM_DESTINATION" != "none" ]]; then
-        get_channel_url
-    fi
 }
 
 # Display configuration summary
@@ -449,6 +468,9 @@ show_config_summary() {
     done
 }
 
+
+# --- Deployment & Notification Functions ---
+
 # Validation functions
 validate_prerequisites() {
     log "Validating prerequisites..."
@@ -477,6 +499,7 @@ cleanup() {
     fi
 }
 
+# Send a single message to a single chat ID with the dynamic button
 send_to_telegram() {
     local chat_id="$1"
     local message="$2"
@@ -517,6 +540,7 @@ EOF
     fi
 }
 
+# Handles sending messages to all configured IDs (supports multi-channel/chat)
 send_deployment_notification() {
     local message="$1"
     local success_count=0
@@ -607,6 +631,9 @@ send_deployment_notification() {
     fi
 }
 
+
+# --- Main Logic ---
+
 main() {
     info "=== GCP Cloud Run V2Ray Deployment ==="
     
@@ -643,8 +670,9 @@ main() {
     cleanup
     
     log "Cloning repository..."
+    # Cloning relies on the user having made the repository public or having configured credentials.
     if ! git clone https://github.com/KaungSattKyaw/gcp-v2ray.git; then
-        error "Failed to clone repository"
+        error "Failed to clone repository. Ensure the repository is Public."
         exit 1
     fi
     
