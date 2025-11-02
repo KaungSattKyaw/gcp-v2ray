@@ -606,13 +606,15 @@ main() {
     
     DOMAIN=$(echo $SERVICE_URL | sed 's|https://||')
     
-    # --- TIMING CALCULATIONS (MST - UTC+6:30) ---
-    
-    # စတင်ချိန် (MST): နေ့စွဲ၊ အချိန်၊ AM/PM ဖြင့် ပြသရန် (Cloud Shell Local Time ကို အခြေခံသည်)
-    start_time=$(date +"%b %d, %I:%M %p (MST)")
-    
-    # ကုန်ဆုံးမည့်အချိန် (MST): နေ့စွဲ၊ အချိန်၊ AM/PM ဖြင့် ပြသရန် (Duration ပေါင်းပြီး တွက်ချက်သည်)
-    expiry_time=$(date +"%b %d, %I:%M %p (MST)" --date="$DEFAULT_DEPLOY_DURATION")
+    # --- TIMING CALCULATIONS (MST - Asia/Rangoon) ---
+export TZ='Asia/Rangoon'
+
+# စတင်ချိန် (MST): နေ့စွဲ၊ အချိန်၊ AM/PM ဖြင့် ပြသရန် (Cloud Shell Local Time ကို အခြေခံသည်)
+start_time=$(date +"%b %d, %I:%M %p (MST)")
+
+# ကုန်ဆုံးမည့်အချိန် (MST): နေ့စွဲ၊ အချိန်၊ AM/PM ဖြင့် ပြသရန် (Duration ပေါင်းပြီး တွက်ချက်သည်)
+expiry_time=$(date +"%b %d, %I:%M %p (MST)" --date="$DEFAULT_DEPLOY_DURATION")
+
     
     # Create Vless share link
     VLESS_LINK="vless://${UUID}@${HOST_DOMAIN}:443?path=%2Ftgkmks26381Mr&security=tls&alpn=none&encryption=none&host=${DOMAIN}&type=ws&sni=${DOMAIN}#${SERVICE_NAME}"
