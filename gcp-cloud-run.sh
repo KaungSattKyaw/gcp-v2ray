@@ -285,7 +285,7 @@ get_user_input() {
     # UUID
     while true; do
         read -p "Enter UUID: " UUID
-        UUID=${UUID:-"5652a909-a0b4-48dd-ae29-972757489bf0}
+        UUID=${UUID:-"5652a909-a0b4-48dd-ae29-972757489bf0"}
         if validate_uuid "$UUID"; then
             break
         fi
