@@ -45,21 +45,43 @@ validate_bot_token() {
     return 0
 }
 
-# Function to validate Channel ID
+# Function to validate Channel ID (Now supports multiple IDs separated by commas)
 validate_channel_id() {
-    if [[ ! $1 =~ ^-?[0-9]+$ ]]; then
-        error "Invalid Channel ID format"
-        return 1
-    fi
+    local ids_string="$1"
+    # Split by comma and iterate
+    IFS=',' read -r -a ids_array <<< "$ids_string"
+    
+    for id in "${ids_array[@]}"; do
+        # Trim leading/trailing spaces
+        local trimmed_id=$(echo "$id" | xargs)
+        if [[ -z "$trimmed_id" ]]; then
+            continue # Skip empty string resulting from split
+        fi
+        if [[ ! "$trimmed_id" =~ ^-?[0-9]+$ ]]; then
+            error "Invalid Channel ID format detected: $trimmed_id"
+            return 1
+        fi
+    done
     return 0
 }
 
-# Function to validate Chat ID (for bot private messages)
+# Function to validate Chat ID (Now supports multiple IDs separated by commas)
 validate_chat_id() {
-    if [[ ! $1 =~ ^-?[0-9]+$ ]]; then
-        error "Invalid Chat ID format"
-        return 1
-    fi
+    local ids_string="$1"
+    # Split by comma and iterate
+    IFS=',' read -r -a ids_array <<< "$ids_string"
+    
+    for id in "${ids_array[@]}"; do
+        # Trim leading/trailing spaces
+        local trimmed_id=$(echo "$id" | xargs)
+        if [[ -z "$trimmed_id" ]]; then
+            continue # Skip empty string resulting from split
+        fi
+        if [[ ! "$trimmed_id" =~ ^-?[0-9]+$ ]]; then
+            error "Invalid Chat ID format detected: $trimmed_id"
+            return 1
+        fi
+    done
     return 0
 }
 
@@ -250,7 +272,7 @@ select_telegram_destination() {
             1) 
                 TELEGRAM_DESTINATION="channel"
                 while true; do
-                    read -p "Enter Telegram Channel ID: " TELEGRAM_CHANNEL_ID
+                    read -p "Enter Telegram Channel ID(s) (comma-separated if multiple): " TELEGRAM_CHANNEL_ID
                     if validate_channel_id "$TELEGRAM_CHANNEL_ID"; then
                         break
                     fi
@@ -260,7 +282,7 @@ select_telegram_destination() {
             2) 
                 TELEGRAM_DESTINATION="bot"
                 while true; do
-                    read -p "Enter your Chat ID (for bot private message): " TELEGRAM_CHAT_ID
+                    read -p "Enter your Chat ID(s) (comma-separated if multiple, for bot private message): " TELEGRAM_CHAT_ID
                     if validate_chat_id "$TELEGRAM_CHAT_ID"; then
                         break
                     fi
@@ -270,13 +292,13 @@ select_telegram_destination() {
             3) 
                 TELEGRAM_DESTINATION="both"
                 while true; do
-                    read -p "Enter Telegram Channel ID: " TELEGRAM_CHANNEL_ID
+                    read -p "Enter Telegram Channel ID(s) (comma-separated if multiple): " TELEGRAM_CHANNEL_ID
                     if validate_channel_id "$TELEGRAM_CHANNEL_ID"; then
                         break
                     fi
                 done
                 while true; do
-                    read -p "Enter your Chat ID (for bot private message): " TELEGRAM_CHAT_ID
+                    read -p "Enter your Chat ID(s) (comma-separated if multiple, for bot private message): " TELEGRAM_CHAT_ID
                     if validate_chat_id "$TELEGRAM_CHAT_ID"; then
                         break
                     fi
@@ -285,6 +307,8 @@ select_telegram_destination() {
                 ;;
             4) 
                 TELEGRAM_DESTINATION="none"
+                TELEGRAM_CHANNEL_ID=""
+                TELEGRAM_CHAT_ID=""
                 break 
                 ;;
             *) echo "Invalid selection. Please enter a number between 1-4." ;;
@@ -400,10 +424,10 @@ show_config_summary() {
         echo "Bot Token:     ${TELEGRAM_BOT_TOKEN:0:8}..."
         echo "Destination:   $TELEGRAM_DESTINATION"
         if [[ "$TELEGRAM_DESTINATION" == "channel" || "$TELEGRAM_DESTINATION" == "both" ]]; then
-            echo "Channel ID:    $TELEGRAM_CHANNEL_ID"
+            echo "Channel ID(s): $TELEGRAM_CHANNEL_ID"
         fi
         if [[ "$TELEGRAM_DESTINATION" == "bot" || "$TELEGRAM_DESTINATION" == "both" ]]; then
-            echo "Chat ID:       $TELEGRAM_CHAT_ID"
+            echo "Chat ID(s):    $TELEGRAM_CHAT_ID"
         fi
         echo "Channel URL:   $CHANNEL_URL"
         echo "Button Text:   $CHANNEL_NAME"
@@ -497,45 +521,74 @@ send_deployment_notification() {
     local message="$1"
     local success_count=0
     
+    # Split Channel IDs into an array for iteration
+    IFS=',' read -r -a channel_ids <<< "$TELEGRAM_CHANNEL_ID"
+    # Split Chat IDs into an array for iteration
+    IFS=',' read -r -a chat_ids <<< "$TELEGRAM_CHAT_ID"
+    
     case $TELEGRAM_DESTINATION in
         "channel")
-            log "Sending to Telegram Channel..."
-            if send_to_telegram "$TELEGRAM_CHANNEL_ID" "$message"; then
-                log "✅ Successfully sent to Telegram Channel"
-                success_count=$((success_count + 1))
-            else
-                error "❌ Failed to send to Telegram Channel"
-            fi
+            log "Sending to Telegram Channel(s)..."
+            for id in "${channel_ids[@]}"; do
+                local trimmed_id=$(echo "$id" | xargs)
+                if [[ -z "$trimmed_id" ]]; then continue; fi
+                
+                log "Attempting to send to Channel ID: $trimmed_id"
+                if send_to_telegram "$trimmed_id" "$message"; then
+                    log "✅ Successfully sent to Telegram Channel ($trimmed_id)"
+                    success_count=$((success_count + 1))
+                else
+                    error "❌ Failed to send to Telegram Channel ($trimmed_id)"
+                fi
+            done
             ;;
             
         "bot")
-            log "Sending to Bot private message..."
-            if send_to_telegram "$TELEGRAM_CHAT_ID" "$message"; then
-                log "✅ Successfully sent to Bot private message"
-                success_count=$((success_count + 1))
-            else
-                error "❌ Failed to send to Bot private message"
-            fi
+            log "Sending to Bot private message(s)..."
+            for id in "${chat_ids[@]}"; do
+                local trimmed_id=$(echo "$id" | xargs)
+                if [[ -z "$trimmed_id" ]]; then continue; fi
+                
+                log "Attempting to send to Chat ID: $trimmed_id"
+                if send_to_telegram "$trimmed_id" "$message"; then
+                    log "✅ Successfully sent to Bot private message ($trimmed_id)"
+                    success_count=$((success_count + 1))
+                else
+                    error "❌ Failed to send to Bot private message ($trimmed_id)"
+                fi
+            done
             ;;
             
         "both")
-            log "Sending to both Channel and Bot..."
+            log "Sending to both Channel(s) and Bot Message(s)..."
             
-            # Send to Channel
-            if send_to_telegram "$TELEGRAM_CHANNEL_ID" "$message"; then
-                log "✅ Successfully sent to Telegram Channel"
-                success_count=$((success_count + 1))
-            else
-                error "❌ Failed to send to Telegram Channel"
-            fi
+            # Send to Channel(s)
+            for id in "${channel_ids[@]}"; do
+                local trimmed_id=$(echo "$id" | xargs)
+                if [[ -z "$trimmed_id" ]]; then continue; fi
+                
+                log "Attempting to send to Channel ID: $trimmed_id"
+                if send_to_telegram "$trimmed_id" "$message"; then
+                    log "✅ Successfully sent to Telegram Channel ($trimmed_id)"
+                    success_count=$((success_count + 1))
+                else
+                    error "❌ Failed to send to Telegram Channel ($trimmed_id)"
+                fi
+            done
             
-            # Send to Bot
-            if send_to_telegram "$TELEGRAM_CHAT_ID" "$message"; then
-                log "✅ Successfully sent to Bot private message"
-                success_count=$((success_count + 1))
-            else
-                error "❌ Failed to send to Bot private message"
-            fi
+            # Send to Bot Message(s)
+            for id in "${chat_ids[@]}"; do
+                local trimmed_id=$(echo "$id" | xargs)
+                if [[ -z "$trimmed_id" ]]; then continue; fi
+                
+                log "Attempting to send to Chat ID: $trimmed_id"
+                if send_to_telegram "$trimmed_id" "$message"; then
+                    log "✅ Successfully sent to Bot private message ($trimmed_id)"
+                    success_count=$((success_count + 1))
+                else
+                    error "❌ Failed to send to Bot private message ($trimmed_id)"
+                fi
+            done
             ;;
             
         "none")
