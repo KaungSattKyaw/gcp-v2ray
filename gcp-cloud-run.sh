@@ -13,7 +13,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# Region list for selection
+# Region list for selection - IMPORTANT: Using numerical keys ensures proper order in the selection menu.
 declare -A REGIONS=(
     [1]="us-central1|Iowa, USA|🇺🇸"
     [2]="us-west1|Oregon, USA|🇺🇸"
@@ -219,7 +219,8 @@ select_region() {
     echo
     info "=== Region Selection ==="
     
-    local keys=("${!REGIONS[@]}")
+    # Sort the keys numerically to ensure they display 1, 2, 3...
+    local keys=($(for k in "${!REGIONS[@]}"; do echo $k; done | sort -n))
     local count=1
     
     for key in "${keys[@]}"; do
