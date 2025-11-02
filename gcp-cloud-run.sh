@@ -13,7 +13,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# Region list for selection - IMPORTANT: Using numerical keys ensures proper order in the selection menu.
+# Region list for selection - Using numerical keys ensures proper order in the selection menu.
 declare -A REGIONS=(
     [1]="us-central1|Iowa, USA|🇺🇸"
     [2]="us-west1|Oregon, USA|🇺🇸"
@@ -608,13 +608,11 @@ main() {
     
     # --- TIMING CALCULATIONS (MST - UTC+6:30) ---
     
-    # စတင်ချိန် (MST): နေ့စွဲ၊ အချိန်၊ AM/PM ဖြင့် ပြသရန်
-    # -390 minutes = -6 hours 30 minutes to convert UTC to MST (UTC+6:30)
-    start_time=$(date -u +"%b %d, %I:%M %p (MST)" --date='-390 minutes')
+    # စတင်ချိန် (MST): နေ့စွဲ၊ အချိန်၊ AM/PM ဖြင့် ပြသရန် (Cloud Shell Local Time ကို အခြေခံသည်)
+    start_time=$(date +"%b %d, %I:%M %p (MST)")
     
-    # ကုန်ဆုံးမည့်အချိန် (MST): နေ့စွဲ၊ အချိန်၊ AM/PM ဖြင့် ပြသရန်
-    # DEFAULT_DEPLOY_DURATION (5h) + UTC+6:30 (390 minutes) ကို တွက်ချက်သည်
-    expiry_time=$(date -u +"%b %d, %I:%M %p (MST)" --date="$DEFAULT_DEPLOY_DURATION +390 minutes")
+    # ကုန်ဆုံးမည့်အချိန် (MST): နေ့စွဲ၊ အချိန်၊ AM/PM ဖြင့် ပြသရန် (Duration ပေါင်းပြီး တွက်ချက်သည်)
+    expiry_time=$(date +"%b %d, %I:%M %p (MST)" --date="$DEFAULT_DEPLOY_DURATION")
     
     # Create Vless share link
     VLESS_LINK="vless://${UUID}@${HOST_DOMAIN}:443?path=%2Ftgkmks26381Mr&security=tls&alpn=none&encryption=none&host=${DOMAIN}&type=ws&sni=${DOMAIN}#${SERVICE_NAME}"
