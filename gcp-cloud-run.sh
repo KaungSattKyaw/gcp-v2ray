@@ -607,13 +607,19 @@ main() {
     DOMAIN=$(echo $SERVICE_URL | sed 's|https://||')
     
     # --- TIMING CALCULATIONS (MST - Asia/Rangoon) ---
+
+# Timezone ကို MST အဖြစ် တိကျစွာ သတ်မှတ်ပါ
 export TZ='Asia/Rangoon'
 
-# စတင်ချိန် (MST): နေ့စွဲ၊ အချိန်၊ AM/PM ဖြင့် ပြသရန် (Cloud Shell Local Time ကို အခြေခံသည်)
+# စတင်ချိန် (MST): နေ့စွဲ၊ အချိန်၊ AM/PM ဖြင့် ပြသရန်
 start_time=$(date +"%b %d, %I:%M %p (MST)")
 
 # ကုန်ဆုံးမည့်အချိန် (MST): နေ့စွဲ၊ အချိန်၊ AM/PM ဖြင့် ပြသရန် (Duration ပေါင်းပြီး တွက်ချက်သည်)
 expiry_time=$(date +"%b %d, %I:%M %p (MST)" --date="$DEFAULT_DEPLOY_DURATION")
+
+# TZ ကို ပုံမှန်အတိုင်း ပြန်ထားပါ (Script ရဲ့ ကျန်တဲ့အပိုင်းအတွက်)
+unset TZ
+
 
     
     # Create Vless share link
