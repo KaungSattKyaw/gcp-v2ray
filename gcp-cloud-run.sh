@@ -3,8 +3,7 @@
 set -euo pipefail
 
 # --- Configuration Constants ---
-# အလိုအလျောက်သတ်မှတ်ထားသော ကြာချိန်: ၅ နာရီ။ (MST တွက်ချက်ရန်အတွက်သာ။ Service အမှန်တကယ်ရပ်သွားမည်မဟုတ်ပါ)
-DEFAULT_DEPLOY_DURATION="5h" 
+DEFAULT_DEPLOY_DURATION="5h" # ၅ နာရီ (MST တွက်တွက်ရန် အသုံးပြုသည်။)
 
 # Colors for output
 RED='\033[0;31m'
@@ -13,7 +12,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# Region list for selection - Using numerical keys ensures proper order in the selection menu.
+# Region list for selection
 declare -A REGIONS=(
     [1]="us-central1|Iowa, USA|🇺🇸"
     [2]="us-west1|Oregon, USA|🇺🇸"
@@ -46,7 +45,6 @@ info() {
     echo -e "${BLUE}[INFO]${NC} $1"
 }
 
-# Function to validate UUID format
 validate_uuid() {
     local uuid_pattern='^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
     if [[ ! $1 =~ $uuid_pattern ]]; then
@@ -56,7 +54,6 @@ validate_uuid() {
     return 0
 }
 
-# Function to validate Telegram Bot Token
 validate_bot_token() {
     local token_pattern='^[0-9]{8,10}:[a-zA-Z0-9_-]{35,45}$'
     if [[ ! $1 =~ $token_pattern ]]; then
@@ -66,10 +63,8 @@ validate_bot_token() {
     return 0
 }
 
-# Function to validate comma-separated Chat IDs (for channels or private messages)
 validate_ids() {
     local ids="$1"
-    # Allow comma-separated numbers (positive/negative)
     if [[ ! $ids =~ ^-?[0-9]+(,-?[0-9]+)*$ ]]; then
         error "Invalid ID format: Please use comma-separated numbers (e.g., -1001234567,123456)"
         return 1
@@ -77,14 +72,10 @@ validate_ids() {
     return 0
 }
 
-# Function to validate URL format
 validate_url() {
     local url="$1"
-    # Basic URL pattern for Telegram and other common URLs
     local url_pattern='^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/[a-zA-Z0-9._~:/?#[\]@!$&'"'"'()*+,;=-]*)?$'
-    # Special pattern for Telegram t.me URLs
     local telegram_pattern='^https?://t\.me/[a-zA-Z0-9_]+$'
-    
     if [[ "$url" =~ $telegram_pattern ]]; then
         return 0
     elif [[ "$url" =~ $url_pattern ]]; then
@@ -98,7 +89,6 @@ validate_url() {
     fi
 }
 
-# CPU selection function
 select_cpu() {
     echo
     info "=== CPU Configuration ==="
@@ -107,7 +97,6 @@ select_cpu() {
     echo "3. 4 CPU Cores"
     echo "4. 8 CPU Cores"
     echo
-    
     while true; do
         read -p "Select CPU cores (1-4): " cpu_choice
         case $cpu_choice in
@@ -118,16 +107,12 @@ select_cpu() {
             *) echo "Invalid selection. Please enter a number between 1-4." ;;
         esac
     done
-    
     info "Selected CPU: $CPU core(s)"
 }
 
-# Memory selection function
 select_memory() {
     echo
     info "=== Memory Configuration ==="
-    
-    # Show recommended memory based on CPU selection
     case $CPU in
         1) echo "Recommended memory: 512Mi - 2Gi" ;;
         2) echo "Recommended memory: 1Gi - 4Gi" ;;
@@ -135,7 +120,6 @@ select_memory() {
         8) echo "Recommended memory: 4Gi - 16Gi" ;;
     esac
     echo
-    
     echo "Memory Options:"
     echo "1. 512Mi"
     echo "2. 1Gi"
@@ -144,7 +128,7 @@ select_memory() {
     echo "5. 8Gi"
     echo "6. 16Gi"
     echo
-    
+
     while true; do
         read -p "Select memory (1-6): " memory_choice
         case $memory_choice in
@@ -157,27 +141,19 @@ select_memory() {
             *) echo "Invalid selection. Please enter a number between 1-6." ;;
         esac
     done
-    
-    # Validate memory configuration
     validate_memory_config
-    
     info "Selected Memory: $MEMORY"
 }
 
-# Validate memory configuration based on CPU
 validate_memory_config() {
     local cpu_num=$CPU
     local memory_num=$(echo $MEMORY | sed 's/[^0-9]*//g')
     local memory_unit=$(echo $MEMORY | sed 's/[0-9]*//g')
-    
-    # Convert everything to Mi for comparison
     if [[ "$memory_unit" == "Gi" ]]; then
         memory_num=$((memory_num * 1024))
     fi
-    
     local min_memory=0
     local max_memory=0
-    
     case $cpu_num in
         1)
             min_memory=512
@@ -196,7 +172,6 @@ validate_memory_config() {
             max_memory=16384
             ;;
     esac
-    
     if [[ $memory_num -lt $min_memory ]]; then
         warn "Memory configuration ($MEMORY) might be too low for $CPU CPU core(s)."
         warn "Recommended minimum: $((min_memory / 1024))Gi"
@@ -214,21 +189,16 @@ validate_memory_config() {
     fi
 }
 
-# Region selection function
 select_region() {
     echo
     info "=== Region Selection ==="
-    
-    # Sort the keys numerically to ensure they display 1, 2, 3...
     local keys=($(for k in "${!REGIONS[@]}"; do echo $k; done | sort -n))
     local count=1
-    
     for key in "${keys[@]}"; do
         IFS='|' read -r region_id region_name flag <<< "${REGIONS[$key]}"
         echo "$key. $region_id ($region_name)"
     done
     echo
-    
     while true; do
         read -p "Select region (1-${#REGIONS[@]}): " region_choice
         if [[ -v REGIONS[$region_choice] ]]; then
@@ -238,11 +208,9 @@ select_region() {
             echo "Invalid selection. Please enter a number between 1-${#REGIONS[@]}."
         fi
     done
-    
     info "Selected region: $REGION ($REGION_NAME)"
 }
 
-# Telegram destination selection
 select_telegram_destination() {
     echo
     info "=== Telegram Destination ==="
@@ -251,7 +219,6 @@ select_telegram_destination() {
     echo "3. Send to both Channel(s) and Bot"
     echo "4. Don't send to Telegram"
     echo
-    
     while true; do
         read -p "Select destination (1-4): " telegram_choice
         case $telegram_choice in
@@ -263,8 +230,7 @@ select_telegram_destination() {
                         break
                     fi
                 done
-                break
-                ;;
+                break ;;
             2)
                 TELEGRAM_DESTINATION="bot"
                 while true; do
@@ -273,8 +239,7 @@ select_telegram_destination() {
                         break
                     fi
                 done
-                break
-                ;;
+                break ;;
             3)
                 TELEGRAM_DESTINATION="both"
                 while true; do
@@ -289,67 +254,49 @@ select_telegram_destination() {
                         break
                     fi
                 done
-                break
-                ;;
+                break ;;
             4)
                 TELEGRAM_DESTINATION="none"
-                break
-                ;;
+                break ;;
             *) echo "Invalid selection. Please enter a number between 1-4." ;;
         esac
     done
 }
 
-# Channel URL input function
 get_channel_url() {
     echo
     info "=== Channel URL Configuration ==="
     echo "Default URL: https://t.me/zero_1101_tg"
     echo "You can use the default URL or enter your own custom URL."
     echo
-    
     while true; do
         read -p "Enter Channel URL [default: https://t.me/zero_1101_tg]: " CHANNEL_URL
         CHANNEL_URL=${CHANNEL_URL:-"https://t.me/zero_1101_tg"}
-        
-        # Remove any trailing slashes
         CHANNEL_URL=$(echo "$CHANNEL_URL" | sed 's|/*$||')
-        
         if validate_url "$CHANNEL_URL"; then
             break
         else
             warn "Please enter a valid URL"
         fi
     done
-    
-    # Extract channel name for button text
     if [[ "$CHANNEL_URL" == *"t.me/"* ]]; then
         CHANNEL_NAME=$(echo "$CHANNEL_URL" | sed 's|.*t.me/||' | sed 's|/*$||')
     else
-        # For non-telegram URLs, use the domain name
         CHANNEL_NAME=$(echo "$CHANNEL_URL" | sed 's|.*://||' | sed 's|/.*||' | sed 's|www\.||')
     fi
-    
-    # If channel name is empty, use default (for safety)
     if [[ -z "$CHANNEL_NAME" ]]; then
         CHANNEL_NAME="1101 Channel"
     fi
-    
-    # Truncate long names for button text
     if [[ ${#CHANNEL_NAME} -gt 20 ]]; then
         CHANNEL_NAME="${CHANNEL_NAME:0:17}..."
     fi
-    
     info "Channel URL: $CHANNEL_URL"
     info "Channel Name: $CHANNEL_NAME"
 }
 
-# User input function
 get_user_input() {
     echo
     info "=== Service Configuration ==="
-    
-    # Service Name
     while true; do
         read -p "Enter service name: " SERVICE_NAME
         if [[ -n "$SERVICE_NAME" ]]; then
@@ -358,8 +305,6 @@ get_user_input() {
             error "Service name cannot be empty"
         fi
     done
-    
-    # UUID
     while true; do
         read -p "Enter UUID [default: 5652a909-a0b4-48dd-ae29-972757489bf0]: " UUID_INPUT
         UUID=${UUID_INPUT:-"5652a909-a0b4-48dd-ae29-972757489bf0"}
@@ -367,8 +312,6 @@ get_user_input() {
             break
         fi
     done
-    
-    # Telegram Bot Token (required for any Telegram option)
     if [[ "$TELEGRAM_DESTINATION" != "none" ]]; then
         while true; do
             read -p "Enter Telegram Bot Token: " TELEGRAM_BOT_TOKEN
@@ -376,18 +319,13 @@ get_user_input() {
                 break
             fi
         done
-        # Get Channel URL if Telegram is enabled
         get_channel_url
     fi
-    
-    # Host Domain (optional)
     read -p "Enter host domain [default: m.googleapis.com]: " HOST_DOMAIN
     HOST_DOMAIN=${HOST_DOMAIN:-"m.googleapis.com"}
-    
     info "Default Deployment Duration is set to $DEFAULT_DEPLOY_DURATION (for expiry time calculation)."
 }
 
-# Display configuration summary
 show_config_summary() {
     echo
     info "=== Configuration Summary ==="
@@ -399,7 +337,6 @@ show_config_summary() {
     echo "CPU:           $CPU core(s)"
     echo "Memory:        $MEMORY"
     echo "Duration:      $DEFAULT_DEPLOY_DURATION (Calculated)"
-    
     if [[ "$TELEGRAM_DESTINATION" != "none" ]]; then
         echo "Bot Token:     ${TELEGRAM_BOT_TOKEN:0:8}..."
         echo "Destination:   $TELEGRAM_DESTINATION"
@@ -415,7 +352,6 @@ show_config_summary() {
         echo "Telegram:      Not configured"
     fi
     echo
-    
     while true; do
         read -p "Proceed with deployment? (y/n): " confirm
         case $confirm in
@@ -429,20 +365,16 @@ show_config_summary() {
     done
 }
 
-# Validation functions
 validate_prerequisites() {
     log "Validating prerequisites..."
-    
     if ! command -v gcloud &> /dev/null; then
         error "gcloud CLI is not installed. Please install Google Cloud SDK."
         exit 1
     fi
-    
     if ! command -v git &> /dev/null; then
         error "git is not installed. Please install git."
         exit 1
     fi
-    
     local PROJECT_ID=$(gcloud config get-value project)
     if [[ -z "$PROJECT_ID" || "$PROJECT_ID" == "(unset)" ]]; then
         error "No project configured. Run: gcloud config set project PROJECT_ID"
@@ -461,8 +393,6 @@ send_to_telegram() {
     local chat_id="$1"
     local message="$2"
     local response
-    
-    # Create inline keyboard with dynamic button
     local keyboard=$(cat << EOF
 {
     "inline_keyboard": [[
@@ -474,7 +404,6 @@ send_to_telegram() {
 }
 EOF
 )
-    
     response=$(curl -s -w "%{http_code}" -X POST \
         -H "Content-Type: application/json" \
         -d "{
@@ -485,10 +414,8 @@ EOF
             \"reply_markup\": $keyboard
         }" \
         https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage)
-    
     local http_code="${response: -3}"
     local content="${response%???}"
-    
     if [[ "$http_code" == "200" ]]; then
         return 0
     else
@@ -500,7 +427,6 @@ EOF
 send_deployment_notification() {
     local message="$1"
     local success_count=0
-    
     case $TELEGRAM_DESTINATION in
         "channel"|"both")
             log "Sending to Telegram Channel(s)..."
@@ -515,7 +441,6 @@ send_deployment_notification() {
             done
             ;;
     esac
-    
     case $TELEGRAM_DESTINATION in
         "bot"|"both")
             log "Sending to Bot private message(s)..."
@@ -530,8 +455,6 @@ send_deployment_notification() {
             done
             ;;
     esac
-    
-    # Check if at least one message was successful
     if [[ $success_count -gt 0 ]]; then
         log "Telegram notification completed ($success_count successful)"
         return 0
@@ -543,48 +466,45 @@ send_deployment_notification() {
 
 main() {
     info "=== GCP Cloud Run V2Ray Deployment ==="
-    
-    # Get user input
+
     select_region
     select_cpu
     select_memory
     select_telegram_destination
     get_user_input
     show_config_summary
-    
+
     PROJECT_ID=$(gcloud config get-value project)
-    
+
     log "Starting Cloud Run deployment..."
-    
+
     validate_prerequisites
-    
-    # Set trap for cleanup
+
     trap cleanup EXIT
-    
+
     log "Enabling required APIs..."
     gcloud services enable \
         cloudbuild.googleapis.com \
         run.googleapis.com \
         iam.googleapis.com \
         --quiet
-    
-    # Clean up any existing directory
+
     cleanup
-    
+
     log "Cloning repository..."
     if ! git clone https://github.com/KaungSattKyaw/gcp-v2ray.git; then
         error "Failed to clone repository"
         exit 1
     fi
-    
+
     cd gcp-v2ray
-    
+
     log "Building container image..."
     if ! gcloud builds submit --tag gcr.io/${PROJECT_ID}/gcp-v2ray-image --quiet; then
         error "Build failed"
         exit 1
     fi
-    
+
     log "Deploying to Cloud Run..."
     if ! gcloud run deploy ${SERVICE_NAME} \
         --image gcr.io/${PROJECT_ID}/gcp-v2ray-image \
@@ -597,35 +517,24 @@ main() {
         error "Deployment failed"
         exit 1
     fi
-    
-    # Get the service URL
+
     SERVICE_URL=$(gcloud run services describe ${SERVICE_NAME} \
         --region ${REGION} \
         --format 'value(status.url)' \
         --quiet)
-    
+
     DOMAIN=$(echo $SERVICE_URL | sed 's|https://||')
-    
-    # --- TIMING CALCULATIONS (MST - Asia/Rangoon) ---
 
-# Timezone ကို MST အဖြစ် တိကျစွာ သတ်မှတ်ပါ
-export TZ='Asia/Rangoon'
+    # --- TIMING CALCULATIONS (မြန်မာစံတော်ချိန်) ---
 
-# စတင်ချိန် (MST): နေ့စွဲ၊ အချိန်၊ AM/PM ဖြင့် ပြသရန်
-start_time=$(date +"%b %d, %I:%M %p (MST)")
+    export TZ='Asia/Yangon'
+    start_time=$(date +"%b %d, %I:%M %p (MST)")
+    expiry_time=$(date +"%b %d, %I:%M %p (MST)" --date="$DEFAULT_DEPLOY_DURATION")
+    unset TZ
 
-# ကုန်ဆုံးမည့်အချိန် (MST): နေ့စွဲ၊ အချိန်၊ AM/PM ဖြင့် ပြသရန် (Duration ပေါင်းပြီး တွက်ချက်သည်)
-expiry_time=$(date +"%b %d, %I:%M %p (MST)" --date="$DEFAULT_DEPLOY_DURATION")
-
-# TZ ကို ပုံမှန်အတိုင်း ပြန်ထားပါ (Script ရဲ့ ကျန်တဲ့အပိုင်းအတွက်)
-unset TZ
-
-
-    
     # Create Vless share link
     VLESS_LINK="vless://${UUID}@${HOST_DOMAIN}:443?path=%2Ftgkmks26381Mr&security=tls&alpn=none&encryption=none&host=${DOMAIN}&type=ws&sni=${DOMAIN}#${SERVICE_NAME}"
-    
-    # Create beautiful telegram message with emojis (IN BURMESE) - Aesthetic Version
+
     MESSAGE="
 🚀 *GCP V2Ray Deployment Successful* 🚀
 ━━━━━━━━━━━━━━━━━━━━
@@ -649,8 +558,7 @@ ${VLESS_LINK}
 3. 📥 clipboard မှ import လုပ်ပါ။
 4. ✅ ချိတ်ဆက်ပြီး စတင်အသုံးပြုပါ။ 🎉
 "
-    
-    # Create console message (IN BURMESE)
+
     CONSOLE_MESSAGE="
 🚀 GCP V2Ray Deployment Successful 🚀
 ━━━━━━━━━━━━━━━━━━━━
@@ -673,29 +581,25 @@ ${VLESS_LINK}
 3. 📥 clipboard မှ import လုပ်ပါ။
 4. ✅ ချိတ်ဆက်ပြီး စတင်အသုံးပြုပါ။ 🎉
 ━━━━━━━━━━━━━━━━━━━━"
-    
-    # Save to file
+
     echo "$CONSOLE_MESSAGE" > deployment-info.txt
     log "Deployment info saved to deployment-info.txt"
-    
-    # Display locally
+
     echo
     info "=== Deployment Information ==="
     echo "$CONSOLE_MESSAGE"
     echo
-    
-    # Send to Telegram based on user selection
+
     if [[ "$TELEGRAM_DESTINATION" != "none" ]]; then
         log "Sending deployment info to Telegram..."
         send_deployment_notification "$MESSAGE"
     else
         log "Skipping Telegram notification as per user selection"
     fi
-    
+
     log "Deployment completed successfully!"
     log "Service URL: $SERVICE_URL"
     log "Configuration saved to: deployment-info.txt"
 }
 
-# Run main function
 main "$@"
