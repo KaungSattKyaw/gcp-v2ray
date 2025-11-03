@@ -555,7 +555,7 @@ ${VLESS_LINK}
 ━━━━━━━━━━━━━━━━━━━━
 📝 *အသုံးပြုနည်း လမ်းညွှန်*
 1. 🔗 configuration link ကို copy ကူးပါ။
-2. 📱 V2Ray client ကို ဖွင့်ပါ။
+2. 📱 V2 rayNg,NPV Tunnel,Net Mode နဲ့အသုံးပြုချင်သည့် App ကိုဖွင့်ပါ။
 3. 📥 clipboard မှ import လုပ်ပါ။
 4. ✅ ချိတ်ဆက်ပြီး စတင်အသုံးပြုပါ။ 🎉
 "
@@ -578,7 +578,7 @@ ${VLESS_LINK}
 
 📝 အသုံးပြုနည်း လမ်းညွှန်:
 1. 🔗 configuration link ကို copy ကူးပါ။
-2. 📱 V2Ray client ကို ဖွင့်ပါ။
+2. 📱 V2 rayNg,NPV Tunnel,Net Mode နဲ့အသုံးပြုချင်သည့် App ကိုဖွင့်ပါ။
 3. 📥 clipboard မှ import လုပ်ပါ။
 4. ✅ ချိတ်ဆက်ပြီး စတင်အသုံးပြုပါ။ 🎉
 ━━━━━━━━━━━━━━━━━━━━"
