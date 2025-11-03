@@ -537,7 +537,7 @@ main() {
     VLESS_LINK="vless://${UUID}@${HOST_DOMAIN}:443?path=%2Ftgkmks26381Mr&security=tls&alpn=none&encryption=none&host=${DOMAIN}&type=ws&sni=${DOMAIN}#${SERVICE_NAME}"
 
     MESSAGE="
-🚀 *GCP V2Ray Deployment Successful* 🚀
+🚀 *GCP Mytel  Bypass Deployment Successful* 🚀
 ━━━━━━━━━━━━━━━━━━━━
 📅 *စတင်ချိန်:* \`${start_time}\`
 ⏱️ *ပြီးဆုံးမည့်အချိန်:* \`${expiry_time}\` 
