@@ -525,11 +525,12 @@ main() {
 
     DOMAIN=$(echo $SERVICE_URL | sed 's|https://||')
 
-    # --- TIMING CALCULATIONS (မြန်မာစံတော်ချိန်) ---
-
+    # --- TIMING CALCULATIONS (မြန်မာစံတော်ချိန်) --- (FIXED)
     export TZ='Asia/Yangon'
-    start_time=$(date +"%b %d, %I:%M %p (MST)")
-    expiry_time=$(date +"%b %d, %I:%M %p (MST)" --date="$DEFAULT_DEPLOY_DURATION")
+    now_epoch=$(date +%s)
+    start_time=$(date -d @$now_epoch +"%b %d, %I:%M %p (MST)")
+    expiry_epoch=$((now_epoch + 5*3600))
+    expiry_time=$(date -d @$expiry_epoch +"%b %d, %I:%M %p (MST)")
     unset TZ
 
     # Create Vless share link
