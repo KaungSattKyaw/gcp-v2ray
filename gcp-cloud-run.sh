@@ -548,20 +548,20 @@ main() {
 *Resources:* \`${CPU} CPU | ${MEMORY} RAM\`
 *Domain:* \`${DOMAIN}\`
 ━━━━━━━━━━━━━━━━━━━━
-🔗 *V2Ray Configuration Link (Click to copy):*
+🔗 *Configuration Link (Click to copy):*
 \`\`\`
 ${VLESS_LINK}
 \`\`\`
 ━━━━━━━━━━━━━━━━━━━━
 📝 *အသုံးပြုနည်း လမ်းညွှန်*
 1. 🔗 configuration link ကို copy ကူးပါ။
-2. 📱 V2 rayNg,NPV Tunnel,Net Mode နဲ့အသုံးပြုချင်သည့် App ကိုဖွင့်ပါ။
+2. 📱 V2rayNg,NPVTunnel,NetMode နဲ့အသုံးပြုချင်သည့် Appကိုဖွင့်ပါ။
 3. 📥 clipboard မှ import လုပ်ပါ။
 4. ✅ ချိတ်ဆက်ပြီး စတင်အသုံးပြုပါ။ 🎉
 "
 
     CONSOLE_MESSAGE="
-🚀 GCP V2Ray Deployment Successful 🚀
+🚀 GCP Mytel  Bypass Deployment Successful 🚀
 ━━━━━━━━━━━━━━━━━━━━
 📅 စတင်ချိန်: ${start_time}
 ⏱️ ပြီးဆုံးမည့်အချိန်: ${expiry_time}
@@ -573,12 +573,12 @@ ${VLESS_LINK}
 • Resources: ${CPU} CPU | ${MEMORY} RAM
 • Domain: ${DOMAIN}
 
-🔗 V2Ray Configuration Link:
+🔗 Configuration Link:
 ${VLESS_LINK}
 
 📝 အသုံးပြုနည်း လမ်းညွှန်:
 1. 🔗 configuration link ကို copy ကူးပါ။
-2. 📱 V2 rayNg,NPV Tunnel,Net Mode နဲ့အသုံးပြုချင်သည့် App ကိုဖွင့်ပါ။
+2. 📱 V2rayNg,NPVTunnel,NetMode နဲ့အသုံးပြုချင်သည့် Appကိုဖွင့်ပါ။
 3. 📥 clipboard မှ import လုပ်ပါ။
 4. ✅ ချိတ်ဆက်ပြီး စတင်အသုံးပြုပါ။ 🎉
 ━━━━━━━━━━━━━━━━━━━━"
